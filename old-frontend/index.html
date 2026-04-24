@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>My Tasks</title>
+</head>
+<body>
+
+<h2>My Tasks</h2>
+
+<button onclick="logout()">Logout</button>
+
+<br><br>
+
+<input type="text" id="taskInput" placeholder="Enter task">
+<button onclick="addTask()">Add Task</button>
+
+<p id="message"></p>
+
+<ul id="taskList"></ul>
+
+<script>
+const API_URL = "http://localhost:5000/tasks";
+const token = localStorage.getItem("token");
+const message = document.getElementById("message");
+
+// Redirect if not logged in
+if (!token) {
+  window.location.href = "login.html";
+}
+
+// Logout
+function logout() {
+  localStorage.removeItem("token");
+  window.location.href = "login.html";
+}
+
+// Load tasks
+async function loadTasks() {
+  try {
+    const res = await fetch(API_URL, {
+      headers: {
+        "Authorization": "Bearer " + token
+      }
+    });
+
+    // If token expired or invalid
+    if (res.status === 401) {
+      logout();
+      return;
+    }
+
+    const data = await res.json();
+
+    const list = document.getElementById("taskList");
+    list.innerHTML = "";
+
+    if (!Array.isArray(data)) {
+      message.innerText = "Failed to load tasks";
+      return;
+    }
+
+    data.forEach(task => {
+      const li = document.createElement("li");
+
+      li.innerHTML = `
+        ${task.title} (${task.completed ? "done" : "pending"})
+        <button onclick="toggleTask('${task._id}', ${task.completed})">✔</button>
+        <button onclick="deleteTask('${task._id}')">Delete</button>
+      `;
+
+      list.appendChild(li);
+    });
+
+  } catch (err) {
+    console.error(err);
+    message.innerText = "Error loading tasks";
+  }
+}
+
+// Add task
+async function addTask() {
+  const input = document.getElementById("taskInput");
+  const title = input.value.trim();
+
+  message.innerText = "";
+
+  if (!title) {
+    message.innerText = "Enter a task";
+    return;
+  }
+
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + token
+      },
+      body: JSON.stringify({ title })
+    });
+
+    if (!res.ok) {
+      message.innerText = "Failed to add task";
+      return;
+    }
+
+    input.value = ""; // clear input
+    loadTasks();
+
+  } catch (err) {
+    console.error(err);
+    message.innerText = "Error adding task";
+  }
+}
+
+// Toggle task
+async function toggleTask(id, completed) {
+  try {
+    await fetch(API_URL + "/" + id, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + token
+      },
+      body: JSON.stringify({ completed: !completed })
+    });
+
+    loadTasks();
+
+  } catch (err) {
+    console.error(err);
+    message.innerText = "Error updating task";
+  }
+}
+
+// Delete task
+async function deleteTask(id) {
+  if (!confirm("Delete this task?")) return;
+
+  try {
+    await fetch(API_URL + "/" + id, {
+      method: "DELETE",
+      headers: {
+        "Authorization": "Bearer " + token
+      }
+    });
+
+    loadTasks();
+
+  } catch (err) {
+    console.error(err);
+    message.innerText = "Error deleting task";
+  }
+}
+
+// Initial load
+loadTasks();
+</script>
+
+</body>
+</html>
