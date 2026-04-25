@@ -1,50 +1,27 @@
-const Task = require("../models/taskModel");
+const Task = require("../models/taskmodel");
 
-// Create Task
-exports.createTask = async (req, res) => {
-  try {
-    const task = await Task.create({
-      title: req.body.title,
-      userId: req.user.id,
-    });
-
-    res.json(task);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
-// Get Tasks (ONLY USER TASKS ✅)
+// GET ALL TASKS
 exports.getTasks = async (req, res) => {
   try {
-    const tasks = await Task.find({ userId: req.user.id });
-    res.json(tasks);
+    const tasks = await Task.find();
+    res.json(tasks); // always array
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error(err);
+    res.status(500).json([]);
   }
 };
 
-// Update Task (TOGGLE COMPLETE ✅)
-exports.updateTask = async (req, res) => {
+// CREATE TASK
+exports.createTask = async (req, res) => {
   try {
-    const task = await Task.findByIdAndUpdate(
-      req.params.id,
-      { completed: req.body.completed },
-      { new: true }
-    );
+    const { title } = req.body;
 
-    res.json(task);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
+    const newTask = new Task({ title });
+    await newTask.save();
 
-// Delete Task
-exports.deleteTask = async (req, res) => {
-  try {
-    await Task.findByIdAndDelete(req.params.id);
-    res.json({ message: "Deleted" });
+    res.status(201).json(newTask);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error(err);
+    res.status(500).json({ message: "Error creating task" });
   }
 };
