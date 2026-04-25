@@ -8,13 +8,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// MongoDB Connection
+// MongoDB connection (IMPORTANT: replace YOUR URL)
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('MongoDB connected ✅'))
-  .catch((err) => {
-    console.error('MongoDB connection error ❌:', err);
-    process.exit(1);
-  });
+  .then(() => console.log("MongoDB connected ✅"))
+  .catch(err => console.log(err));
 
 // Routes
 const authRoutes = require('./routes/authRoutes');
@@ -23,18 +20,12 @@ const taskRoutes = require('./routes/taskRoutes');
 app.use('/auth', authRoutes);
 app.use('/tasks', taskRoutes);
 
-// Home Route
+// Test route
 app.get('/', (req, res) => {
-  res.send('Backend is running 🚀');
+  res.send("Backend working 🚀");
 });
 
-// Error Handling
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: err.message || "Server Error" });
-});
-
-// PORT FIX for Render
+// Start server
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {

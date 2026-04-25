@@ -1,77 +1,59 @@
-const bcrypt = require('bcrypt');
+const User = require('../models/userModel');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { addUser, findUserByEmail } = require('../models/userModel');
 
 // SIGNUP
-const signup = async (req, res) => {
+exports.signup = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // check existing user
-    const existingUser = findUserByEmail(email);
-    if (existingUser) {
+    const existing = await User.findOne({ email });
+    if (existing) {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    // hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // create user
-    const newUser = {
-      id: Date.now(),
+    const user = new User({
       email,
       password: hashedPassword
-    };
-
-    addUser(newUser);
-
-    // generate token
-    const token = jwt.sign({ id: newUser.id }, "secretkey", {
-      expiresIn: "1h"
     });
 
-    res.json({
-      message: "User created",
-      token
-    });
+    await user.save();
 
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.json({ message: "Signup successful" });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Signup error" });
   }
 };
 
-
 // LOGIN
-const login = async (req, res) => {
+exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // check user exists
-    const user = findUserByEmail(email);
+    const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ message: "User not found" });
     }
 
-    // compare password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid password" });
     }
 
-    // generate token
-    const token = jwt.sign({ id: user.id }, "secretkey", {
-      expiresIn: "1h"
-    });
+    const token = jwt.sign(
+      { id: user._id },
+      "secretkey",
+      { expiresIn: "1d" }
+    );
 
-    res.json({
-      message: "Login successful",
-      token
-    });
+    res.json({ token, user });
 
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Login error" });
   }
 };
-
-
-module.exports = { signup, login };
