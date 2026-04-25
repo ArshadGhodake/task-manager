@@ -1,33 +1,36 @@
-import { useState } from "react";
-import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [message, setMessage] = useState("");
 
-  const navigate = useNavigate();
-
-  const login = async () => {
-    if (!email || !password) {
-      setMessage("Enter email & password");
-      return;
-    }
-
+  const handleLogin = async () => {
     try {
-      const res = await axios.post("http://localhost:5000/auth/login", {
-        email,
-        password,
+      const res = await fetch("https://task-manager-backend-bjyg.onrender.com/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
       });
 
-      const token = res.data.token;
+      const data = await res.json();
 
-      localStorage.setItem("token", token);
+      // 🔥 IMPORTANT FIX
+      if (res.ok) {
+        alert("Login success ✅");
 
-      navigate("/tasks");
+        // Save token
+        localStorage.setItem("token", data.token);
+
+        window.location.href = "/tasks";
+      } else {
+        alert(data.message || "Login failed ❌");
+      }
+
     } catch (err) {
-      setMessage("Login failed");
+      console.error(err);
+      alert("Something went wrong ❌");
     }
   };
 
@@ -36,25 +39,20 @@ function Login() {
       <h2>Login</h2>
 
       <input
+        type="email"
         placeholder="Email"
+        value={email}
         onChange={(e) => setEmail(e.target.value)}
-      /><br /><br />
+      />
 
       <input
         type="password"
         placeholder="Password"
+        value={password}
         onChange={(e) => setPassword(e.target.value)}
-      /><br /><br />
+      />
 
-      <button onClick={login}>Login</button>
-
-      <br /><br />
-
-      <button onClick={() => navigate("/signup")}>
-        Go to Signup
-      </button>
-
-      <p>{message}</p>
+      <button onClick={handleLogin}>Login</button>
     </div>
   );
 }
