@@ -1,12 +1,18 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+const BASE_URL = "https://task-manager-backend-bjyg.onrender.com";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const navigate = useNavigate();
 
-  const handleLogin = async () => {
+  const handleLogin = async (e) => {
+    e.preventDefault();
+
     try {
-      const res = await fetch("https://task-manager-backend-bjyg.onrender.com/auth/login", {
+      const res = await fetch(`${BASE_URL}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -16,43 +22,45 @@ function Login() {
 
       const data = await res.json();
 
-      // 🔥 IMPORTANT FIX
       if (res.ok) {
         alert("Login success ✅");
 
-        // Save token
+        // save token
         localStorage.setItem("token", data.token);
 
-        window.location.href = "/tasks";
+        navigate("/tasks");
       } else {
         alert(data.message || "Login failed ❌");
       }
-
     } catch (err) {
       console.error(err);
-      alert("Something went wrong ❌");
+      alert("Server error ❌");
     }
   };
 
   return (
-    <div>
+    <div style={{ textAlign: "center", marginTop: "50px" }}>
       <h2>Login</h2>
 
-      <input
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
+      <form onSubmit={handleLogin}>
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        /><br />
 
-      <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        /><br />
 
-      <button onClick={handleLogin}>Login</button>
+        <button type="submit">Login</button>
+      </form>
     </div>
   );
 }

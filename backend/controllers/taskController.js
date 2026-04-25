@@ -1,27 +1,35 @@
 const Task = require("../models/taskmodel");
 
-// GET ALL TASKS
+// GET tasks (user specific)
 exports.getTasks = async (req, res) => {
-  try {
-    const tasks = await Task.find();
-    res.json(tasks); // always array
-  } catch (err) {
-    console.error(err);
-    res.status(500).json([]);
-  }
+  const tasks = await Task.find({ user: req.user.id });
+  res.json(tasks);
 };
 
-// CREATE TASK
+// CREATE task
 exports.createTask = async (req, res) => {
-  try {
-    const { title } = req.body;
+  const task = await Task.create({
+    title: req.body.title,
+    user: req.user.id,
+    completed: false,
+  });
 
-    const newTask = new Task({ title });
-    await newTask.save();
+  res.json(task);
+};
 
-    res.status(201).json(newTask);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Error creating task" });
-  }
+// UPDATE task
+exports.updateTask = async (req, res) => {
+  const task = await Task.findByIdAndUpdate(
+    req.params.id,
+    req.body,
+    { new: true }
+  );
+
+  res.json(task);
+};
+
+// DELETE task
+exports.deleteTask = async (req, res) => {
+  await Task.findByIdAndDelete(req.params.id);
+  res.json({ message: "Deleted" });
 };
